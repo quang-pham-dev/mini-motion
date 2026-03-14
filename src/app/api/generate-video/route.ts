@@ -28,10 +28,7 @@ export async function POST(request: NextRequest) {
 
     if (error instanceof Error) {
       if (error.message.includes(ERROR_MESSAGES.MINIMAX_API_KEY_MISSING)) {
-        return NextResponse.json(
-          { error: ERROR_MESSAGES.MISSING_API_KEY },
-          { status: 500 }
-        );
+        return NextResponse.json({ error: ERROR_MESSAGES.MISSING_API_KEY }, { status: 500 });
       }
       if (
         error.message.includes('clipboard') ||
