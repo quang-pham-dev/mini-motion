@@ -5,8 +5,8 @@ import {
   useGenerateVideo,
 } from '@/services/generators/mutations';
 import { useVideoTaskStatus } from '@/services/generators/queries';
-import { useGetProject } from '@/services/projects/queries';
 import { useUpdateProject } from '@/services/projects/mutations';
+import { useGetProject } from '@/services/projects/queries';
 import { useUpdateScene } from '@/services/scenes/mutations';
 import { Project } from '@/types';
 import { type User } from '@supabase/supabase-js';
@@ -89,19 +89,21 @@ export function usePreviewProject(projectId: string | string[], user: User | nul
       // Mark this task as handled so we don't fire the mutation again
       handledTaskIdRef.current = taskId;
 
-      updateSceneMutationRef.current.mutate(
-        {
-          projectId: currentProject.id,
-          sceneId: firstProcessingScene.id,
-          data: {
-            video_url: videoTaskData.videoUrl,
-            video_status: videoTaskData.taskStatus === 'Success' ? 'completed' : 'failed',
-          },
+      console.log('[VideoPolling] Task completed, updating scene:', {
+        taskId,
+        status: videoTaskData.taskStatus,
+        videoUrl: videoTaskData.videoUrl ? 'present' : 'missing',
+      });
+
+      updateSceneMutationRef.current.mutate({
+        projectId: currentProject.id,
+        sceneId: firstProcessingScene.id,
+        data: {
+          video_url: videoTaskData.videoUrl,
+          video_status: videoTaskData.taskStatus === 'Success' ? 'completed' : 'failed',
         },
-        {
-          onSuccess: () => refetchRef.current(),
-        }
-      );
+      });
+      // No need to manually refetch — useUpdateScene now invalidates projectKeys.detail
     }
   }, [videoTaskData, firstProcessingScene]);
 
