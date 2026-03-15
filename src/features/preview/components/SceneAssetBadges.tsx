@@ -15,9 +15,7 @@ export function SceneAssetBadges({ scene }: SceneAssetBadgesProps) {
             ? 'bg-green-100 text-green-700'
             : scene.video_status === 'processing'
               ? 'bg-blue-100 text-blue-700'
-              : scene.video_status === 'failed'
-                ? 'bg-red-100 text-red-700'
-                : 'bg-gray-100 text-gray-500'
+              : 'bg-gray-100 text-gray-500'
         }`}
       >
         <Film className="h-3 w-3" />
@@ -25,9 +23,7 @@ export function SceneAssetBadges({ scene }: SceneAssetBadgesProps) {
           ? 'Video ✓'
           : scene.video_status === 'processing'
             ? 'Video...'
-            : scene.video_status === 'failed'
-              ? 'Video ✗'
-              : 'Video'}
+            : 'Video'}
       </span>
 
       {/* Voiceover badge */}
@@ -37,9 +33,7 @@ export function SceneAssetBadges({ scene }: SceneAssetBadgesProps) {
             ? 'bg-green-100 text-green-700'
             : scene.audio_status === 'processing'
               ? 'bg-blue-100 text-blue-700'
-              : scene.audio_status === 'failed'
-                ? 'bg-red-100 text-red-700'
-                : 'bg-gray-100 text-gray-500'
+              : 'bg-gray-100 text-gray-500'
         }`}
       >
         <Mic className="h-3 w-3" />
@@ -47,9 +41,7 @@ export function SceneAssetBadges({ scene }: SceneAssetBadgesProps) {
           ? 'Voice ✓'
           : scene.audio_status === 'processing'
             ? 'Voice...'
-            : scene.audio_status === 'failed'
-              ? 'Voice ✗'
-              : 'Voice'}
+            : 'Voice'}
       </span>
     </div>
   );

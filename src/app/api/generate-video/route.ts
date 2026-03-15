@@ -2,37 +2,6 @@ import { ERROR_MESSAGES } from '@/constants';
 import { getMiniMaxClient, pollVideoTask } from '@/lib/minimax';
 import { NextRequest, NextResponse } from 'next/server';
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2000;
-
-async function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-async function generateVideoWithRetry(prompt: string): Promise<string> {
-  const client = getMiniMaxClient();
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const taskId = await client.generateVideo(prompt);
-      return taskId;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(
-        `Video generation attempt ${attempt}/${MAX_RETRIES} failed:`,
-        lastError.message
-      );
-
-      if (attempt < MAX_RETRIES) {
-        await delay(RETRY_DELAY_MS);
-      }
-    }
-  }
-
-  throw lastError || new Error('Video generation failed after retries');
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -42,13 +11,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: ERROR_MESSAGES.MISSING_PROMPT }, { status: 400 });
     }
 
-    const taskId = await generateVideoWithRetry(prompt);
+    const client = getMiniMaxClient();
+    // FIX: generateVideo now uses correct endpoint: POST /v1/video_generation
+    const taskId = await client.generateVideo(prompt);
 
     if (!waitForCompletion) {
       return NextResponse.json({ taskId, status: 'processing' });
     }
 
-    const videoUrl = await pollVideoTask(getMiniMaxClient(), taskId);
+    // FIX: pollVideoTask now uses GET /v1/query/video_generation?task_id=xxx
+    // and then retrieves download URL via GET /v1/files/retrieve?file_id=xxx
+    const videoUrl = await pollVideoTask(client, taskId);
     return NextResponse.json({ taskId, videoUrl, status: 'completed' });
   } catch (error) {
     console.error('Video generation error:', error);
@@ -68,12 +41,6 @@ export async function POST(request: NextRequest) {
               'Image input is not supported. Please use a text-only prompt for video generation.',
           },
           { status: 400 }
-        );
-      }
-      if (error.message.includes('failed after retries')) {
-        return NextResponse.json(
-          { error: 'Video generation failed after 3 attempts. Please try again later.' },
-          { status: 500 }
         );
       }
       return NextResponse.json({ error: error.message }, { status: 500 });

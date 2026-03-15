@@ -6,13 +6,6 @@ import { NextRequest, NextResponse } from 'next/server';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY_MS = 2000;
-
-async function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 function getSupabaseAdmin() {
   if (!supabaseServiceKey) {
     throw new Error(ERROR_MESSAGES.SUPABASE_SERVICE_ROLE_KEY_MISSING);
@@ -20,27 +13,6 @@ function getSupabaseAdmin() {
   return createClient(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-}
-
-async function generateTTSWithRetry(text: string, voiceId?: string): Promise<ArrayBuffer> {
-  const client = getMiniMaxClient();
-  let lastError: Error | null = null;
-
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      const audioBuffer = await client.generateTTS(text, voiceId);
-      return audioBuffer;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`TTS generation attempt ${attempt}/${MAX_RETRIES} failed:`, lastError.message);
-
-      if (attempt < MAX_RETRIES) {
-        await delay(RETRY_DELAY_MS);
-      }
-    }
-  }
-
-  throw lastError || new Error('TTS generation failed after retries');
 }
 
 export async function POST(request: NextRequest) {
@@ -56,7 +28,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: ERROR_MESSAGES.TEXT_TOO_LONG }, { status: 400 });
     }
 
-    const audioBuffer = await generateTTSWithRetry(text, voiceId);
+    const client = getMiniMaxClient();
+    const audioBuffer = await client.generateTTS(text, voiceId);
 
     const supabase = getSupabaseAdmin();
 
@@ -83,12 +56,6 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error) {
       if (error.message.includes(ERROR_MESSAGES.MINIMAX_API_KEY_MISSING)) {
         return NextResponse.json({ error: ERROR_MESSAGES.MISSING_API_KEY }, { status: 500 });
-      }
-      if (error.message.includes('failed after retries')) {
-        return NextResponse.json(
-          { error: 'TTS generation failed after 3 attempts. Please try again later.' },
-          { status: 500 }
-        );
       }
       return NextResponse.json({ error: error.message }, { status: 500 });
     }

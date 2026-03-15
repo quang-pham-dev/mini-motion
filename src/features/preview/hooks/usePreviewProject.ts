@@ -185,48 +185,6 @@ export function usePreviewProject(projectId: string | string[], user: User | nul
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to generate asset';
       setError(errorMsg);
-
-      // Update scene status to failed when generation fails after retries
-      if (project && sceneIndex !== undefined) {
-        const scene = project.scenes[sceneIndex];
-        if (type === 'video' && scene) {
-          try {
-            await updateSceneMutation.mutateAsync({
-              projectId: project.id,
-              sceneId: scene.id,
-              data: { video_status: 'failed' },
-            });
-            await refetch();
-          } catch (updateErr) {
-            console.error('Failed to update scene to failed status:', updateErr);
-          }
-        }
-        if (type === 'audio' && scene) {
-          try {
-            await updateSceneMutation.mutateAsync({
-              projectId: project.id,
-              sceneId: scene.id,
-              data: { audio_status: 'failed' },
-            });
-            await refetch();
-          } catch (updateErr) {
-            console.error('Failed to update scene to failed status:', updateErr);
-          }
-        }
-      }
-
-      // For music, update project status to failed
-      if (project && type === 'music') {
-        try {
-          await updateProjectMutation.mutateAsync({
-            id: project.id,
-            data: { status: 'failed' },
-          });
-          await refetch();
-        } catch (updateErr) {
-          console.error('Failed to update project to failed status:', updateErr);
-        }
-      }
     } finally {
       setGeneratingAsset(null);
     }
