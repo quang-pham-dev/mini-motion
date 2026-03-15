@@ -6,6 +6,7 @@ import {
 } from '@/services/generators/mutations';
 import { useVideoTaskStatus } from '@/services/generators/queries';
 import { useGetProject } from '@/services/projects/queries';
+import { useUpdateProject } from '@/services/projects/mutations';
 import { useUpdateScene } from '@/services/scenes/mutations';
 import { Project } from '@/types';
 import { type User } from '@supabase/supabase-js';
@@ -16,6 +17,7 @@ export function usePreviewProject(projectId: string | string[], user: User | nul
   const { data, isLoading, error, refetch } = useGetProject(id, !!user);
 
   const updateSceneMutation = useUpdateScene();
+  const updateProjectMutation = useUpdateProject();
   const videoMutation = useGenerateVideo();
   const musicMutation = useGenerateMusic();
   const ttsMutation = useGenerateTTS();
@@ -50,6 +52,15 @@ export function usePreviewProject(projectId: string | string[], user: User | nul
     firstProcessingScene?.video_task_id ?? null,
     !!firstProcessingScene
   );
+
+  // Debug logging
+  if (firstProcessingScene) {
+    console.log('[VideoPolling] Processing scene detected:', {
+      sceneId: firstProcessingScene.id,
+      taskId: firstProcessingScene.video_task_id,
+      taskStatus: videoTaskData?.taskStatus,
+    });
+  }
 
   // Use refs to access latest values without adding them as effect dependencies
   const updateSceneMutationRef = useRef(updateSceneMutation);
@@ -118,7 +129,14 @@ export function usePreviewProject(projectId: string | string[], user: User | nul
       }
 
       if (type === 'music') {
-        await musicMutation.mutateAsync(project.music_vibe || 'calm ambient music');
+        const result = await musicMutation.mutateAsync(project.music_vibe || 'calm ambient music');
+
+        await updateProjectMutation.mutateAsync({
+          id: project.id,
+          data: {
+            music_url: result.url,
+          },
+        });
 
         await refetch();
       }

@@ -8,11 +8,12 @@ export const useVideoTaskStatus = (taskId: string | null, enabled: boolean) => {
     queryFn: () => generatorsApi.getVideoTaskStatus(taskId!),
     enabled: !!taskId && enabled,
     staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
     refetchInterval: query => {
       const status = query.state.data?.taskStatus;
-      return status === 'Pending' || status === 'Processing' ? 5000 : false;
+      return !status || status === 'Processing' ? 5000 : false;
     },
     retry: true,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 };
