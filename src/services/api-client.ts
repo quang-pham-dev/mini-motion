@@ -24,13 +24,28 @@ export async function apiClient<T>(endpoint: string, options: FetchOptions = {})
     Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value));
   }
 
-  const response = await fetch(url.toString(), {
-    headers: {
-      'Content-Type': 'application/json',
-      ...init.headers,
-    },
-    ...init,
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(url.toString(), {
+      headers: {
+        'Content-Type': 'application/json',
+        ...init.headers,
+      },
+      ...init,
+    });
+  } catch (networkError) {
+    // Network-level errors (ERR_HTTP2_PROTOCOL_ERROR, ERR_CONNECTION_RESET, etc.)
+    // These happen before we can check response.ok
+    const message =
+      networkError instanceof Error ? networkError.message : ERROR_MESSAGES.UNKNOWN_ERROR;
+    throw new ApiError(
+      0,
+      message.includes('ERR_HTTP2_PROTOCOL_ERROR') || message === 'Failed to fetch'
+        ? 'Request failed — the server may have timed out or the response was too large. Please try again.'
+        : message
+    );
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: ERROR_MESSAGES.UNKNOWN_ERROR }));

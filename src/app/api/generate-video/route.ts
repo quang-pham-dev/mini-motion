@@ -1,6 +1,9 @@
-import { ERROR_MESSAGES } from '@/constants';
+import { ERROR_MESSAGES, MAX_DURATION } from '@/constants';
 import { getMiniMaxClient, pollVideoTask } from '@/lib/minimax';
 import { NextRequest, NextResponse } from 'next/server';
+
+// Next.js Route Segment Config — tells Vercel to allow this function to run longer
+export const maxDuration = MAX_DURATION.VIDEO;
 
 export async function POST(request: NextRequest) {
   try {

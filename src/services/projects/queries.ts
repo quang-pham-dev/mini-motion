@@ -14,5 +14,7 @@ export const useGetProject = (id: string, enabled = true) => {
     queryKey: projectKeys.detail(id),
     queryFn: () => projectsApi.getById(id),
     enabled: !!id && enabled,
+    retry: 2,
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 10000),
   });
 };

@@ -1,7 +1,10 @@
-import { ERROR_MESSAGES } from '@/constants';
+import { ERROR_MESSAGES, MAX_DURATION } from '@/constants';
 import { getMiniMaxClient } from '@/lib/minimax';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+
+// Next.js Route Segment Config — tells Vercel to allow this function to run longer
+export const maxDuration = MAX_DURATION.TTS;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;

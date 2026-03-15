@@ -16,3 +16,12 @@ export const ASSET_STATUS = {
 } as const;
 
 export type AssetStatusType = (typeof ASSET_STATUS)[keyof typeof ASSET_STATUS];
+
+export const MAX_DURATION = {
+  MUSIC: 120,
+  VIDEO: 120,
+  SCRIPT: 60,
+  TTS: 120,
+} as const;
+
+export type MaxDurationType = (typeof MAX_DURATION)[keyof typeof MAX_DURATION];
