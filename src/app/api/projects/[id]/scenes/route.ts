@@ -85,7 +85,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     await db
       .update(projects)
-      .set({ status: 'processing' as const })
+      .set({ status: 'draft' as const })
       .where(eq(projects.id, id));
 
     return NextResponse.json({ scenes: insertedScenes });

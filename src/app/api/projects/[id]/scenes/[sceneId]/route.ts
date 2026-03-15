@@ -61,39 +61,64 @@ export async function PATCH(
       return NextResponse.json({ error: ERROR_MESSAGES.SCENE_NOT_FOUND }, { status: 404 });
     }
 
-    if (video_status === 'completed' || audio_status === 'completed') {
-      const pendingScenes = await db
-        .select({ id: scenes.id })
-        .from(scenes)
-        .where(
-          and(eq(scenes.projectId, id), inArray(scenes.videoStatus, ['pending', 'processing']))
-        )
-        .limit(1);
+    // ═══════════════════════════════════════════════════════════
+    // Project Status Lifecycle Management
+    // ═══════════════════════════════════════════════════════════
 
-      if (pendingScenes.length === 0) {
-        await db
-          .update(projects)
-          .set({ status: 'completed' as const })
-          .where(eq(projects.id, id));
-      }
+    // 1. If any scene is currently processing, the project should be marked as processing
+    if (video_status === 'processing' || audio_status === 'processing') {
+      await db
+        .update(projects)
+        .set({ status: 'processing' as const })
+        .where(eq(projects.id, id));
     }
 
-    // Handle failed video - mark project as failed if all videos are either completed or failed
-    if (video_status === 'failed') {
-      const incompleteScenes = await db
+    // 2. If a scene finished (completed or failed), check if we can move the project out of 'processing'
+    if (
+      video_status === 'completed' ||
+      video_status === 'failed' ||
+      audio_status === 'completed' ||
+      audio_status === 'failed'
+    ) {
+      // Check for any other scenes that are currently 'processing'
+      const activeScenes = await db
         .select({ id: scenes.id })
         .from(scenes)
         .where(
-          and(eq(scenes.projectId, id), inArray(scenes.videoStatus, ['pending', 'processing']))
+          and(
+            eq(scenes.projectId, id),
+            inArray(scenes.videoStatus, ['processing'])
+            // We could also check audioStatus if we want to block the dashboard on audio gen
+          )
         )
         .limit(1);
 
-      // Only mark project as failed if there are no more pending/processing scenes
-      if (incompleteScenes.length === 0) {
-        await db
-          .update(projects)
-          .set({ status: 'failed' as const })
-          .where(eq(projects.id, id));
+      // If no scenes are actively processing anymore
+      if (activeScenes.length === 0) {
+        // Check if all scenes are finished (completed or failed)
+        const pendingScenes = await db
+          .select({ id: scenes.id })
+          .from(scenes)
+          .where(
+            and(eq(scenes.projectId, id), inArray(scenes.videoStatus, ['pending', 'processing']))
+          )
+          .limit(1);
+
+        if (pendingScenes.length === 0) {
+          // Everything is done! Check if there's any failure to decide between 'completed' and 'failed'
+          const failedScenes = await db
+            .select({ id: scenes.id })
+            .from(scenes)
+            .where(and(eq(scenes.projectId, id), eq(scenes.videoStatus, 'failed')))
+            .limit(1);
+
+          await db
+            .update(projects)
+            .set({ status: failedScenes.length > 0 ? 'failed' : 'completed' })
+            .where(eq(projects.id, id));
+        }
+        // Note: Don't set back to 'draft' if there are pending scenes
+        // If project was 'processing', it should stay 'processing' until ALL videos are done
       }
     }
 
