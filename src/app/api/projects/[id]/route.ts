@@ -1,6 +1,7 @@
 import { ERROR_MESSAGES } from '@/constants';
 import { db } from '@/db';
 import { projects, scenes } from '@/db/schema';
+import { resolveProjectStatus } from '@/lib/project-status';
 import { createClient } from '@/lib/supabase/server';
 import { toSnakeCase } from '@/lib/utils';
 import { and, asc, eq } from 'drizzle-orm';
@@ -76,6 +77,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     if (result.length === 0) {
       return NextResponse.json({ error: ERROR_MESSAGES.PROJECT_NOT_FOUND }, { status: 404 });
+    }
+
+    // After updating music_url, resolve project status
+    // (music generation doesn't go through scene route, so we need to check here)
+    if (music_url !== undefined) {
+      await resolveProjectStatus(id);
     }
 
     return NextResponse.json({ project: toSnakeCase(result[0]) });
