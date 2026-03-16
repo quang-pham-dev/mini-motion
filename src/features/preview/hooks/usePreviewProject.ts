@@ -12,9 +12,8 @@ import { Project } from '@/types';
 import { type User } from '@supabase/supabase-js';
 import { useCallback, useEffect, useState } from 'react';
 
-export function usePreviewProject(projectId: string | string[], user: User | null) {
-  const id = Array.isArray(projectId) ? projectId[0] : projectId;
-  const { data, isLoading, error: queryError, refetch } = useGetProject(id, !!user);
+export function usePreviewProject(projectId: string, user: User | null) {
+  const { data, isLoading, error: queryError, refetch } = useGetProject(projectId, !!user);
 
   const updateSceneMutation = useUpdateScene();
   const updateProjectMutation = useUpdateProject();

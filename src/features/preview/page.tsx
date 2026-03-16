@@ -7,7 +7,6 @@ import { PreviewPageSkeleton } from '@/components/ui/skeletons';
 import { useAuth } from '@/features/auth';
 import { AlertCircle, X } from 'lucide-react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
 
 import { MusicCard } from './components/MusicCard';
 import { PreviewHeader } from './components/PreviewHeader';
@@ -15,8 +14,11 @@ import { SceneCard } from './components/SceneCard';
 import { usePreviewPlayback } from './hooks/usePreviewPlayback';
 import { usePreviewProject } from './hooks/usePreviewProject';
 
-export default function PreviewPage() {
-  const params = useParams();
+interface PreviewPageProps {
+  projectId: string;
+}
+
+export default function PreviewPage({ projectId }: PreviewPageProps) {
   const { user, loading: authLoading, signIn } = useAuth();
 
   const {
@@ -29,7 +31,7 @@ export default function PreviewPage() {
     isDownloading,
     handleGenerateAsset,
     handleDownloadAll,
-  } = usePreviewProject(params.id as string, user);
+  } = usePreviewProject(projectId, user);
 
   const {
     playingScene,
