@@ -22,7 +22,8 @@ export default function PreviewPage() {
   const {
     project,
     loading,
-    error,
+    fatalError,
+    actionError,
     setError,
     generatingAsset,
     isDownloading,
@@ -58,13 +59,14 @@ export default function PreviewPage() {
     );
   }
 
-  if (error || !project) {
+  // Only show full-page error for fatal errors (can't load project at all)
+  if (fatalError || !project) {
     return (
       <FullscreenMessage>
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <CardTitle>Error</CardTitle>
-            <CardDescription>{error || 'Project not found'}</CardDescription>
+            <CardDescription>{fatalError || 'Project not found'}</CardDescription>
           </CardHeader>
           <CardContent>
             <Link href="/">
@@ -80,12 +82,13 @@ export default function PreviewPage() {
 
   return (
     <PageLayout>
-      {error && (
+      {/* Inline dismissible banner for recoverable errors (e.g. asset generation failed) */}
+      {actionError && (
         <div className="border-b border-red-200 bg-red-50 px-4 py-3">
           <div className="container mx-auto flex items-center justify-between">
             <div className="flex items-center gap-2 text-red-700">
               <AlertCircle className="h-5 w-5" />
-              <span className="text-sm font-medium">{error}</span>
+              <span className="text-sm font-medium">{actionError}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setError(null)}>
               <X className="h-4 w-4" />

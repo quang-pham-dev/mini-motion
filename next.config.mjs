@@ -2,7 +2,6 @@
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
-  cacheComponents: true,
   compiler: {
     removeConsole: {
       exclude: ['error', 'warn'],

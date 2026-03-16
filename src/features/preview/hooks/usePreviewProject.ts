@@ -14,7 +14,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 export function usePreviewProject(projectId: string | string[], user: User | null) {
   const id = Array.isArray(projectId) ? projectId[0] : projectId;
-  const { data, isLoading, error, refetch } = useGetProject(id, !!user);
+  const { data, isLoading, error: queryError, refetch } = useGetProject(id, !!user);
 
   const updateSceneMutation = useUpdateScene();
   const updateProjectMutation = useUpdateProject();
@@ -37,7 +37,9 @@ export function usePreviewProject(projectId: string | string[], user: User | nul
 
   const project: Project | null = data?.project ?? null;
   const loading = isLoading;
-  const errorMessage = error?.message ?? localError;
+  // queryError = fatal (can't load project), localError = recoverable (mutation failed)
+  const fatalError = queryError?.message ?? null;
+  const actionError = localError;
   const setError = useCallback((err: string | Error | null) => {
     if (err === null) {
       setLocalError(null);
@@ -258,7 +260,8 @@ export function usePreviewProject(projectId: string | string[], user: User | nul
   return {
     project,
     loading,
-    error: errorMessage,
+    fatalError,
+    actionError,
     setError,
     generatingAsset,
     isDownloading,
